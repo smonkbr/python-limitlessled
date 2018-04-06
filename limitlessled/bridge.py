@@ -26,7 +26,7 @@ BRIDGE_INITIALIZATION_COMMAND = [0x20, 0x00, 0x00, 0x00, 0x16, 0x02, 0x62,
 KEEP_ALIVE_COMMAND_PREAMBLE = [0xD0, 0x00, 0x00, 0x00, 0x02]
 KEEP_ALIVE_RESPONSE_PREAMBLE = [0xd8, 0x0, 0x0, 0x0, 0x07]
 KEEP_ALIVE_TIME = 5
-RECONNECT_TIME = 5
+RECONNECT_TIME = 2
 SOCKET_TIMEOUT = 5
 STARTING_SEQUENTIAL_BYTE = 0x02
 
@@ -291,17 +291,19 @@ class Bridge(object):
 
                 start = datetime.now()
                 connection_alive = False
-                while datetime.now() - start < timedelta(seconds=SOCKET_TIMEOUT):
-                    response = bytearray(12)
-                    try:
-                        self._socket.recv_into(response)
-                    except socket.timeout:
-                        break
 
-                    if response[:5] == bytearray(KEEP_ALIVE_RESPONSE_PREAMBLE):
-                        connection_alive = True
-                        break
+            while datetime.now() - start < timedelta(seconds=SOCKET_TIMEOUT):
+                response = bytearray(12)
+                try:
+                    self._socket.recv_into(response)
+                except socket.timeout:
+                    break
 
+                if response[:5] == bytearray(KEEP_ALIVE_RESPONSE_PREAMBLE):
+                    connection_alive = True
+                    break
+
+            with self._lock:
                 if not connection_alive:
                     self.is_ready = False
 
